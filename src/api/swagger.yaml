@@ -1,0 +1,361 @@
+openapi: 3.0.0
+info:
+  title: Elevator System API
+  description: API documentation for the building elevator control system
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@elevatorsystem.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.elevatorsystem.com/v1
+    description: Production server
+  - url: https://staging-api.elevatorsystem.com/v1
+    description: Staging server
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    Direction:
+      type: string
+      enum: [up, down, idle]
+
+    ElevatorStatus:
+      type: string
+      enum: [available, occupied, maintenance]
+
+    Elevator:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the elevator
+        currentFloor:
+          type: integer
+          description: Current floor position
+        direction:
+          $ref: '#/components/schemas/Direction'
+        status:
+          $ref: '#/components/schemas/ElevatorStatus'
+        destinationFloor:
+          type: integer
+          nullable: true
+          description: Target floor if elevator is moving
+        queue:
+          type: array
+          items:
+            type: integer
+          description: Queue of pending floor requests
+        metrics:
+          type: object
+          properties:
+            totalTrips:
+              type: integer
+            totalFloors:
+              type: integer
+            averageWaitTime:
+              type: number
+              description: Average wait time in seconds
+
+    Building:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        floors:
+          type: integer
+          minimum: 1
+        elevators:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [active, maintenance, inactive]
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+paths:
+  /elevators/call:
+    post:
+      summary: Call an elevator
+      description: Request an elevator to a specific floor
+      operationId: callElevator
+      tags: [Elevator Control]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - buildingId
+                - fromFloor
+                - direction
+              properties:
+                buildingId:
+                  type: string
+                  format: uuid
+                fromFloor:
+                  type: integer
+                  minimum: 0
+                direction:
+                  $ref: '#/components/schemas/Direction'
+      responses:
+        '200':
+          description: Elevator successfully called
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requestId:
+                    type: string
+                    format: uuid
+                  elevatorId:
+                    type: integer
+                  estimatedArrivalTime:
+                    type: integer
+                    description: Estimated arrival time in seconds
+                  status:
+                    type: string
+                    enum: [dispatched, moving, arrived]
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+        '403':
+          description: API key quota exceeded
+
+  /elevators/{elevatorId}/select:
+    post:
+      summary: Select destination floor
+      description: Select a destination floor from inside the elevator
+      operationId: selectFloor
+      tags: [Elevator Control]
+      parameters:
+        - name: elevatorId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - buildingId
+                - targetFloor
+              properties:
+                buildingId:
+                  type: string
+                  format: uuid
+                targetFloor:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Floor selection successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  estimatedTravelTime:
+                    type: integer
+                    description: Estimated travel time in seconds
+        '404':
+          description: Elevator not found
+
+  /elevators/status:
+    get:
+      summary: Get elevator status
+      description: Get the current status of all elevators in a building
+      operationId: getElevatorStatus
+      tags: [Monitoring]
+      parameters:
+        - name: buildingId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: string
+      responses:
+        '200':
+          description: Current elevator status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buildingId:
+                    type: string
+                    format: uuid
+                  elevators:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Elevator'
+
+  /buildings:
+    post:
+      summary: Register new building
+      description: Register a new building in the system
+      operationId: registerBuilding
+      tags: [Building Management]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - floors
+                - elevators
+              properties:
+                name:
+                  type: string
+                floors:
+                  type: integer
+                  minimum: 1
+                elevators:
+                  type: integer
+                  minimum: 1
+                configuration:
+                  type: object
+                  properties:
+                    algorithm:
+                      type: string
+                      enum: [standard, optimized, custom]
+                    peakHours:
+                      type: object
+                      properties:
+                        morning:
+                          type: object
+                          properties:
+                            start:
+                              type: string
+                              format: time
+                            end:
+                              type: string
+                              format: time
+                        evening:
+                          type: object
+                          properties:
+                            start:
+                              type: string
+                              format: time
+                            end:
+                              type: string
+                              format: time
+      responses:
+        '201':
+          description: Building registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+
+  /buildings/{buildingId}/analytics:
+    get:
+      summary: Get building analytics
+      description: Get analytics data for a specific building
+      operationId: getBuildingAnalytics
+      tags: [Analytics]
+      parameters:
+        - name: buildingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buildingId:
+                    type: string
+                    format: uuid
+                  period:
+                    type: object
+                    properties:
+                      start:
+                        type: string
+                        format: date-time
+                      end:
+                        type: string
+                        format: date-time
+                  metrics:
+                    type: object
+                    properties:
+                      totalRequests:
+                        type: integer
+                      averageWaitTime:
+                        type: number
+                      peakHours:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            hour:
+                              type: integer
+                            requests:
+                              type: integer
+                      efficiency:
+                        type: object
+                        properties:
+                          energyUsage:
+                            type: number
+                          optimizationScore:
+                            type: number
+                            minimum: 0
+                            maximum: 100

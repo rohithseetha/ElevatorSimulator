@@ -1,0 +1,8 @@
+{
+  "/api/v1/buildings": "/buildings",
+  "/api/v1/buildings/:id": "/buildings/:id",
+  "/api/v1/elevators/call": "/elevators",
+  "/api/v1/elevators/:id/select": "/elevators/:id",
+  "/api/v1/elevators/status": "/elevators",
+  "/api/v1/buildings/:id/analytics": "/analytics?id=:id"
+}

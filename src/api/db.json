@@ -1,0 +1,113 @@
+{
+  "buildings": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "name": "Tower A",
+      "floors": 6,
+      "elevators": 5,
+      "status": "active",
+      "configuration": {
+        "algorithm": "optimized",
+        "peakHours": {
+          "morning": {
+            "start": "08:00",
+            "end": "10:00"
+          },
+          "evening": {
+            "start": "17:00",
+            "end": "19:00"
+          }
+        }
+      }
+    },
+    {
+      "name": "test_1",
+      "floors": 5,
+      "elevators": 4,
+      "configuration": {
+        "algorithm": "standard",
+        "peakHours": {
+          "morning": {
+            "start": "0900",
+            "end": "1000"
+          },
+          "evening": {
+            "start": "1800",
+            "end": "1900"
+          }
+        }
+      },
+      "id": "O9lopOS"
+    },
+    {
+      "name": "test_2",
+      "floors": 5,
+      "elevators": 4,
+      "configuration": {
+        "algorithm": "standard",
+        "peakHours": {
+          "morning": {
+            "start": "0900",
+            "end": "1000"
+          },
+          "evening": {
+            "start": "1800",
+            "end": "1900"
+          }
+        }
+      },
+      "id": "zlrZVbO"
+    }
+  ],
+  "elevators": [
+    {
+      "id": 1,
+      "buildingId": "123e4567-e89b-12d3-a456-426614174000",
+      "currentFloor": 0,
+      "direction": "idle",
+      "status": "available",
+      "destinationFloor": null,
+      "queue": []
+    },
+    {
+      "id": 2,
+      "buildingId": "123e4567-e89b-12d3-a456-426614174000",
+      "currentFloor": 3,
+      "direction": "up",
+      "status": "available",
+      "destinationFloor": 5,
+      "queue": []
+    }
+  ],
+  "analytics": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "period": {
+        "start": "2025-02-25T12:36:05.317Z",
+        "end": "2025-02-25T14:36:05.317Z"
+      },
+      "metrics": {
+        "totalRequests": 245,
+        "averageWaitTime": 12.5,
+        "peakHours": [
+          {
+            "hour": 9,
+            "requests": 45
+          },
+          {
+            "hour": 12,
+            "requests": 38
+          },
+          {
+            "hour": 17,
+            "requests": 52
+          }
+        ],
+        "efficiency": {
+          "energyUsage": 342.8,
+          "optimizationScore": 89
+        }
+      }
+    }
+  ]
+}
